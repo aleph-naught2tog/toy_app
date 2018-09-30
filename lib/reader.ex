@@ -7,8 +7,10 @@ defmodule Reader do
 
   @spec check_mailbox(pid) :: no_return
   def check_mailbox(parent) when is_pid(parent) do
-    current = self()
+    :erlang.process_flag(:trap_exit, true)
+
     receive do
+      {:EXIT, _from, _kind} -> shutdown(parent)
       {sender, :echo_in} -> send(sender, :echo_out)
       {^parent, :shutdown_start} -> shutdown(parent)
       {_, {:error, reason}} -> stop(parent, {:error, reason})
@@ -19,6 +21,7 @@ defmodule Reader do
   @spec shutdown(pid) :: {:ok, :done}
   def shutdown(parent_pid) do
     send(parent_pid, {:ok, :done})
+    Process.exit(self(), :normal)
   end
 
   @spec stop(pid, {:error, term}) :: {:error, term}

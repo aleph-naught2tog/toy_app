@@ -22,11 +22,26 @@ defmodule ToyAppTest do
       assert_receive {:error, "because I said so"}
     end
 
+    test "should be alive" do
+      current_pid = self()
+      {:ok, pid} = Reader.start(current_pid)
+      assert Process.alive?(pid)
+    end
+
     test "should stop without error" do
       current_pid = self()
       {:ok, pid} = Reader.start(current_pid)
+      assert Process.alive?(pid)
       send(pid, {current_pid, :shutdown_start})
       assert_receive {:ok, :done}
+      assert Process.alive?(pid) == :false
+    end
+
+    test "should exit" do
+      current_pid = self()
+      {:ok, pid} = Reader.start(current_pid)
+      send(pid, Process.exit(pid, "apples"))
+      assert Process.alive?(pid) == :false
     end
   end
 end
